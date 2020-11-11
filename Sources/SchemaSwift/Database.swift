@@ -17,11 +17,11 @@ struct Database {
         connection = try Connection(connInfo: url)
     }
 
-    func fetchTableNames() throws -> [String] {
-        return try connection
-            .execute("SELECT tablename FROM pg_catalog.pg_tables WHERE schemaname != 'pg_catalog' AND schemaname != 'information_schema' group by tablename;")
+    func fetchTableNames(schema: String) throws -> [String] {
+        try connection
+            .execute("SELECT tablename FROM pg_catalog.pg_tables WHERE (schemaname = $1) AND schemaname != 'pg_catalog' AND schemaname != 'information_schema' group by tablename;", [schema])
             .compactMap({ row in
-                row["tablename"]?.string
+                return row["tablename"]?.string
             })
     }
 

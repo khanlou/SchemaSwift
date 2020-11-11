@@ -16,9 +16,15 @@ struct Generate: ParsableCommand {
     @Option(help: "The full url for the Postgres server, with username, password, database name, and port.")
     var url: String
 
+    @Option(
+        help: "The schema in the database to generate models for. Will default to \"public\" if not specified."
+    )
+    var schema: String = "public"
+
+
     func run() throws {
         let database = try Database(url: url)
-        let tables = try database.fetchTableNames().map({ try database.fetchTableDefinition(tableName: $0) })
+        let tables = try database.fetchTableNames(schema: schema).map({ try database.fetchTableDefinition(tableName: $0) })
 
         var string = """
         /**
@@ -33,7 +39,7 @@ struct Generate: ParsableCommand {
 
         for table in tables {
             string += """
-            struct \(Inflections.upperCamelCase(Inflections.singularize(table.name))) {
+            struct \(Inflections.upperCamelCase(Inflections.singularize(table.name))): Codable {
                 static let tableName = "\(table.name)"
 
 
