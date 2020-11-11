@@ -16,6 +16,21 @@ final class InflectionTests: XCTestCase {
         XCTAssertEqual(Inflections.lowerCamelCase("avatar_url"), "avatarUrl")
     }
 
+    func testSingularize() {
+        XCTAssertEqual(Inflections.singularize("people"), "person")
+        XCTAssertEqual(Inflections.singularize("monkeys"), "monkey")
+        XCTAssertEqual(Inflections.singularize("users"), "user")
+        XCTAssertEqual(Inflections.singularize("men"), "man")
+    }
+
+    func testPluralize() {
+        XCTAssertEqual(Inflections.pluralize("person"), "people")
+        XCTAssertEqual(Inflections.pluralize("monkey"), "monkeys")
+        XCTAssertEqual(Inflections.pluralize("user"), "users")
+        XCTAssertEqual(Inflections.pluralize("man"), "men")
+    }
+
+
     static var allTests = [
         ("testUpperCamelCase", testUpperCamelCase),
         ("testLowerCamelCase", testLowerCamelCase),
