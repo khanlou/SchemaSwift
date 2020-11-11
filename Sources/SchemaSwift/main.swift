@@ -28,12 +28,13 @@ struct Generate: ParsableCommand {
          *
          */
 
+
         """
 
         for table in tables {
             string += """
             struct \(Inflections.upperCamelCase(Inflections.singularize(table.name))) {
-                static let name = "\(table.name)"
+                static let tableName = "\(table.name)"
 
 
             """
