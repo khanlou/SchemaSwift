@@ -17,10 +17,15 @@ struct Generate: ParsableCommand {
     var url: String
 
     @Option(
+        name: [.customShort("o"), .long],
+        help: "The location of the file containing the output. Will output to stdout if a file is not specified."
+    )
+    var output: String?
+
+    @Option(
         help: "The schema in the database to generate models for. Will default to \"public\" if not specified."
     )
     var schema: String = "public"
-
 
     func run() throws {
         let database = try Database(url: url)
@@ -59,7 +64,13 @@ struct Generate: ParsableCommand {
 
             """
         }
-        print(string)
+
+        if let outputPath = output {
+            let url = URL(fileURLWithPath: outputPath)
+            try string.write(to: url, atomically: true, encoding: .utf8)
+        } else {
+            print(string)
+        }
     }
 }
 
