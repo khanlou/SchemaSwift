@@ -30,6 +30,10 @@ final class InflectionTests: XCTestCase {
         XCTAssertEqual(Inflections.pluralize("man"), "men")
     }
 
+    func testCombo() {
+        XCTAssertEqual(Inflections.singularize(Inflections.upperCamelCase("time_entries")), "TimeEntry")
+        XCTAssertEqual(Inflections.upperCamelCase(Inflections.singularize("time_entries")), "TimeEntry")
+    }
 
     static var allTests = [
         ("testUpperCamelCase", testUpperCamelCase),
