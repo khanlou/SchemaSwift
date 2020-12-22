@@ -29,6 +29,9 @@ struct Generate: ParsableCommand {
 
     func run() throws {
         let database = try Database(url: url)
+
+        let enums = try database.fetchEnumTypes(schema: schema)
+
         let tables = try database.fetchTableNames(schema: schema).map({ try database.fetchTableDefinition(tableName: $0) })
 
         var string = """
@@ -42,6 +45,29 @@ struct Generate: ParsableCommand {
 
         """
 
+        for enumDefinition in enums {
+            string += """
+            enum \(Inflections.upperCamelCase(Inflections.singularize(enumDefinition.name))): String, Codable {
+                static let enumName = "\(enumDefinition.name)"
+
+
+            """
+
+            for value in enumDefinition.values {
+                string += """
+                    case \(Inflections.lowerCamelCase(value)) = "\(value)"
+
+                """
+
+            }
+
+            string += """
+            }
+
+
+            """
+        }
+
         for table in tables {
             string += """
             struct \(Inflections.upperCamelCase(Inflections.singularize(table.name))): Codable {
@@ -52,7 +78,7 @@ struct Generate: ParsableCommand {
 
             for column in table.columns {
                 string += """
-                    let \(Inflections.lowerCamelCase(column.name)): \(column.swiftType)\(column.isNullable ? "?" : "")
+                    let \(Inflections.lowerCamelCase(column.name)): \(column.swiftType(including: enums))\(column.isNullable ? "?" : "")
 
                 """
             }

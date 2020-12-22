@@ -20,7 +20,7 @@ public struct Column {
     
     // https://www.postgresql.org/docs/9.5/datatype.html
     // https://github.com/SweetIQ/schemats/blob/master/src/schemaPostgres.ts#L17-L93
-    public var swiftType: String {
+    public func swiftType(including enums: [EnumDefinition]) -> String {
         switch udtName {
         case "bpchar", "char", "varchar", "text", "citext", "bytea", "inet", "time", "timetz", "interval", "name":
             return "String"
@@ -47,9 +47,15 @@ public struct Column {
         case "_timestamptz":
             return "[Date]"
         case "numeric", "money", "_numeric", "_money", "oid", "json", "jsonb", "_json", "_jsonb":
-            fallthrough
+            break
         default:
-            return "Any! \\\\Unknown postgres type: \(udtName)"
+            break
         }
+
+        if let enumDefinition = enums.first(where: { $0.name == udtName }) {
+            return Inflections.upperCamelCase(Inflections.singularize(enumDefinition.name))
+        }
+
+        return "Any! \\\\Unknown postgres type: \(udtName)"
     }
 }

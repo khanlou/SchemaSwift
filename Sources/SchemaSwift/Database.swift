@@ -17,6 +17,27 @@ struct Database {
         connection = try Connection(connInfo: url)
     }
 
+    func fetchEnumTypes(schema: String) throws -> [EnumDefinition] {
+        try connection
+            .execute("""
+            SELECT n.nspname AS SCHEMA, t.typname AS name, e.enumlabel AS value
+                FROM pg_type t
+                JOIN pg_enum e ON t.oid = e.enumtypid
+                JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+                WHERE n.nspname = $1
+                ORDER BY t.typname asc, e.enumlabel asc;
+            """, [schema])
+            .reduce(into: [String: [String]](), { acc, row in
+                guard let name = row["name"]?.string, let value = row["value"]?.string else {
+                    return
+                }
+                acc[name, default: []].append(value)
+            })
+            .map({ name, values in
+                EnumDefinition(name: name, values: values)
+            })
+    }
+
     func fetchTableNames(schema: String) throws -> [String] {
         try connection
             .execute("SELECT tablename FROM pg_catalog.pg_tables WHERE (schemaname = $1) AND schemaname != 'pg_catalog' AND schemaname != 'information_schema' group by tablename;", [schema])
