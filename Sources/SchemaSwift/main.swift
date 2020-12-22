@@ -44,6 +44,7 @@ struct Generate: ParsableCommand {
 
         import Foundation
 
+
         """
 
         for enumDefinition in enums {
