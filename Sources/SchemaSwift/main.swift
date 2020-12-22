@@ -85,6 +85,23 @@ struct Generate: ParsableCommand {
                 """
             }
 
+            string += """
+
+                enum CodingKeys: String, CodingKey {
+
+            """
+
+            for column in table.columns {
+                string += """
+                        case \(Inflections.lowerCamelCase(column.name)) = "\(column.name)"
+
+                """
+            }
+            string += """
+                }
+
+            """
+
 
             string += """
             }
