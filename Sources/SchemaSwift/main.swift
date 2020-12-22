@@ -42,6 +42,7 @@ struct Generate: ParsableCommand {
          *
          */
 
+        import Foundation
 
         """
 
