@@ -21,6 +21,13 @@ public struct Column {
     // https://www.postgresql.org/docs/9.5/datatype.html
     // https://github.com/SweetIQ/schemats/blob/master/src/schemaPostgres.ts#L17-L93
     public func swiftType(including enums: [EnumDefinition]) -> String {
+        let type = swiftTypeIfKnown(enums: enums)
+        let nullableSuffix = isNullable ? "?" : ""
+        let comment = type == nil ? " //Unknown postgres type: \(udtName)" : ""
+        return "\(type ?? "String")\(nullableSuffix)\(comment)"
+    }
+
+    func swiftTypeIfKnown(enums: [EnumDefinition]) -> String? {
         switch udtName {
         case "bpchar", "char", "varchar", "text", "citext", "bytea", "inet", "time", "timetz", "interval", "name":
             return "String"
@@ -56,6 +63,6 @@ public struct Column {
             return Inflections.upperCamelCase(Inflections.singularize(enumDefinition.name))
         }
 
-        return "Any! \\\\Unknown postgres type: \(udtName)"
+        return nil
     }
 }

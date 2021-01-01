@@ -80,7 +80,7 @@ struct Generate: ParsableCommand {
 
             for column in table.columns {
                 string += """
-                    let \(Inflections.lowerCamelCase(column.name)): \(column.swiftType(including: enums))\(column.isNullable ? "?" : "")
+                    let \(Inflections.lowerCamelCase(column.name)): \(column.swiftType(including: enums))
 
                 """
             }
