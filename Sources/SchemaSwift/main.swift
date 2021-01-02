@@ -49,7 +49,7 @@ struct Generate: ParsableCommand {
 
         for enumDefinition in enums {
             string += """
-            enum \(Inflections.upperCamelCase(Inflections.singularize(enumDefinition.name))): String, Codable {
+            enum \(Inflections.upperCamelCase(Inflections.singularize(enumDefinition.name))): String, Codable, CaseIterable {
                 static let enumName = "\(enumDefinition.name)"
 
 
