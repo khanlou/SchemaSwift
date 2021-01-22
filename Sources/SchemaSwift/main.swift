@@ -27,7 +27,14 @@ struct Generate: ParsableCommand {
     )
     var schema: String = "public"
 
+    @Option(
+        help: "Overrides for the generated types. Must be in the format `table.column=Type`. May include multiple overrides."
+    )
+    var override: [String] = []
+
     func run() throws {
+
+        let overrides = Overrides(overrides: override)
         let database = try Database(url: url)
 
         let enums = try database.fetchEnumTypes(schema: schema)
@@ -78,9 +85,11 @@ struct Generate: ParsableCommand {
 
             """
 
+            let overrides = overrides.overrides(forTable: table.name)
+
             for column in table.columns {
                 string += """
-                    let \(Inflections.lowerCamelCase(column.name)): \(column.swiftType(including: enums))
+                    let \(Inflections.lowerCamelCase(column.name)): \(column.swiftType(enums: enums, overrides: overrides))
 
                 """
             }

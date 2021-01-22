@@ -20,8 +20,10 @@ public struct Column {
     
     // https://www.postgresql.org/docs/9.5/datatype.html
     // https://github.com/SweetIQ/schemats/blob/master/src/schemaPostgres.ts#L17-L93
-    public func swiftType(including enums: [EnumDefinition]) -> String {
-        let type = swiftTypeIfKnown(enums: enums)
+    public func swiftType(enums: [EnumDefinition], overrides: [String: String]) -> String {
+
+        let matchingOverride = overrides.first(where: { $0.key == self.name })?.value
+        let type = matchingOverride ?? swiftTypeIfKnown(enums: enums)
         let nullableSuffix = isNullable ? "?" : ""
         let comment = type == nil ? " //Unknown postgres type: \(udtName)" : ""
         return "\(type ?? "String")\(nullableSuffix)\(comment)"
