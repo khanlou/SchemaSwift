@@ -7,6 +7,18 @@
 
 import Foundation
 
+let reservedKeywords: Set<String> = [
+    "public",
+]
+
+public func normalizedForReservedKeywords(_ name: String) -> String {
+    if reservedKeywords.contains(name) {
+        return "`\(name)`"
+    } else {
+        return name
+    }
+}
+
 public struct Column {
     public init(name: String, udtName: String, isNullable: Bool) {
         self.name = name

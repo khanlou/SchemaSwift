@@ -64,7 +64,7 @@ struct Generate: ParsableCommand {
 
             for value in enumDefinition.values {
                 string += """
-                    case \(Inflections.lowerCamelCase(value)) = "\(value)"
+                    case \(Inflections.lowerCamelCase(normalizedForReservedKeywords(value))) = "\(value)"
 
                 """
 
@@ -89,7 +89,7 @@ struct Generate: ParsableCommand {
 
             for column in table.columns {
                 string += """
-                    let \(Inflections.lowerCamelCase(column.name)): \(column.swiftType(enums: enums, overrides: overrides))
+                    let \(Inflections.lowerCamelCase(normalizedForReservedKeywords(column.name))): \(column.swiftType(enums: enums, overrides: overrides))
 
                 """
             }
@@ -102,7 +102,7 @@ struct Generate: ParsableCommand {
 
             for column in table.columns {
                 string += """
-                        case \(Inflections.lowerCamelCase(column.name)) = "\(column.name)"
+                        case \(Inflections.lowerCamelCase(normalizedForReservedKeywords(column.name))) = "\(column.name)"
 
                 """
             }
