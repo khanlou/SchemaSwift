@@ -2,12 +2,30 @@
   "object": {
     "pins": [
       {
-        "package": "CPostgreSQL",
-        "repositoryURL": "https://github.com/vapor-community/cpostgresql.git",
+        "package": "Socket",
+        "repositoryURL": "https://github.com/IBM-Swift/BlueSocket.git",
         "state": {
           "branch": null,
-          "revision": "33f0f94f023ab61ccd0ba2f076dd6a448be853e3",
-          "version": "2.1.0"
+          "revision": "dd924c3bc2c1c144c42b8dda3896f1a03115ded4",
+          "version": "2.0.2"
+        }
+      },
+      {
+        "package": "SSLService",
+        "repositoryURL": "https://github.com/IBM-Swift/BlueSSLService",
+        "state": {
+          "branch": null,
+          "revision": "c249988fb748749739144e7f554710552acdc0bd",
+          "version": "2.0.1"
+        }
+      },
+      {
+        "package": "PostgresClientKit",
+        "repositoryURL": "https://github.com/codewinsdotcom/PostgresClientKit",
+        "state": {
+          "branch": null,
+          "revision": "beafedaea6dc9f04712e9a8547b77f47c406a47e",
+          "version": "1.4.3"
         }
       },
       {
@@ -15,17 +33,8 @@
         "repositoryURL": "https://github.com/apple/swift-argument-parser",
         "state": {
           "branch": null,
-          "revision": "92646c0cdbaca076c8d3d0207891785b3379cbff",
-          "version": "0.3.1"
-        }
-      },
-      {
-        "package": "SwiftgreSQL",
-        "repositoryURL": "https://github.com/khanlou/SwiftgresQL",
-        "state": {
-          "branch": null,
-          "revision": "12395836a839fcd0a9bead0b43918657bc08d029",
-          "version": "0.1.2"
+          "revision": "6b2aa2748a7881eebb9f84fb10c01293e15b52ca",
+          "version": "0.5.0"
         }
       }
     ]
