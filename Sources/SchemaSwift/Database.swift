@@ -56,6 +56,7 @@ struct Database {
             .map({ name, values in
                 EnumDefinition(name: name, values: values)
             })
+            .sorted(by: { $0.name < $1.name })
     }
 
     func fetchTableNames(schema: String) throws -> [String] {
