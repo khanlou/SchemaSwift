@@ -66,6 +66,7 @@ struct Database {
             .compactMap({ row in
                 return try? row.columns[0].string()
             })
+            .sorted()
     }
 
     func fetchTableDefinition(tableName: String) throws -> TableDefinition {
