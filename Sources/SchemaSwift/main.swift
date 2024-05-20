@@ -32,6 +32,11 @@ struct Generate: ParsableCommand {
     var protocols: String = "Equatable, Hashable"
 
     @Option(
+        help: "An empty enum that acts as a namespace that all types will go inside."
+    )
+    var swiftNamespace: String = ""
+
+    @Option(
         help: "Overrides for the generated types. Must be in the format `table.column=Type`. May include multiple overrides."
     )
     var override: [String] = []
@@ -45,7 +50,7 @@ struct Generate: ParsableCommand {
 
         let tables = try database.fetchTableNames(schema: schema).map({ try database.fetchTableDefinition(tableName: $0) })
 
-        var string = """
+        var header = """
         /**
          * AUTO-GENERATED FILE - \(Date()) - DO NOT EDIT!
          *
@@ -58,8 +63,18 @@ struct Generate: ParsableCommand {
 
         """
 
+        if !swiftNamespace.isEmpty {
+            header += """
+            enum \(swiftNamespace) {
+
+
+            """
+        }
+
+        var body = ""
+
         for enumDefinition in enums {
-            string += """
+            body += """
             enum \(Inflections.upperCamelCase(Inflections.singularize(enumDefinition.name))): String, Codable, CaseIterable {
                 static let enumName = "\(enumDefinition.name)"
 
@@ -67,14 +82,14 @@ struct Generate: ParsableCommand {
             """
 
             for value in enumDefinition.values.sorted() {
-                string += """
+                body += """
                     case \(Inflections.lowerCamelCase(normalizedForReservedKeywords(value))) = "\(value)"
 
                 """
 
             }
 
-            string += """
+            body += """
             }
 
 
@@ -82,7 +97,7 @@ struct Generate: ParsableCommand {
         }
 
         for table in tables {
-            string += """
+            body += """
             struct \(Inflections.upperCamelCase(Inflections.singularize(table.name))): Codable\(protocols.isEmpty ? "" : ", \(protocols)") {
                 static let tableName = "\(table.name)"
 
@@ -92,42 +107,56 @@ struct Generate: ParsableCommand {
             let overrides = overrides.overrides(forTable: table.name)
 
             for column in table.columns {
-                string += """
+                body += """
                     let \(Inflections.lowerCamelCase(normalizedForReservedKeywords(column.name))): \(column.swiftType(enums: enums, overrides: overrides))
 
                 """
             }
 
-            string += """
+            body += """
 
                 enum CodingKeys: String, CodingKey {
 
             """
 
             for column in table.columns {
-                string += """
+                body += """
                         case \(Inflections.lowerCamelCase(normalizedForReservedKeywords(column.name))) = "\(column.name)"
 
                 """
             }
-            string += """
+            body += """
                 }
 
             """
 
 
-            string += """
+            body += """
             }
 
 
             """
         }
 
+        var footer = ""
+        if !swiftNamespace.isEmpty {
+            body = body
+                .split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
+                .map({ "    " + $0 })
+                .joined(separator: "\n")
+
+            body.removeLast(9) // trim trailing whitespace
+
+            footer += "}"
+        }
+
+        let completeString = header + body + footer
+
         if let outputPath = output {
             let url = URL(fileURLWithPath: outputPath)
-            try string.write(to: url, atomically: true, encoding: .utf8)
+            try completeString.write(to: url, atomically: true, encoding: .utf8)
         } else {
-            print(string)
+            print(completeString)
         }
     }
 }
