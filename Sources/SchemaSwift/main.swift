@@ -27,6 +27,11 @@ struct Generate: ParsableCommand {
     var schema: String = "public"
 
     @Option(
+        help: "A list of comma separated protocols to apply to each record struct. Codable conformance is always included. Will default to adding \"Equatable, Hashable\" if not specified."
+    )
+    var protocols: String = "Equatable, Hashable"
+
+    @Option(
         help: "Overrides for the generated types. Must be in the format `table.column=Type`. May include multiple overrides."
     )
     var override: [String] = []
@@ -78,7 +83,7 @@ struct Generate: ParsableCommand {
 
         for table in tables {
             string += """
-            struct \(Inflections.upperCamelCase(Inflections.singularize(table.name))): Codable {
+            struct \(Inflections.upperCamelCase(Inflections.singularize(table.name))): Codable\(protocols.isEmpty ? "" : ", \(protocols)") {
                 static let tableName = "\(table.name)"
 
 
