@@ -61,7 +61,7 @@ struct Generate: ParsableCommand {
 
             """
 
-            for value in enumDefinition.values {
+            for value in enumDefinition.values.sorted() {
                 string += """
                     case \(Inflections.lowerCamelCase(normalizedForReservedKeywords(value))) = "\(value)"
 
