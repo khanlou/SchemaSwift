@@ -71,7 +71,7 @@ struct Database {
 
     func fetchTableDefinition(tableName: String) throws -> TableDefinition {
         let columns = try connection
-            .execute("SELECT column_name, udt_name, is_nullable FROM information_schema.columns WHERE table_name = $1", [tableName])
+            .execute("SELECT column_name, udt_name, is_nullable FROM information_schema.columns WHERE table_name = $1 ORDER BY ordinal_position", [tableName])
             .map({ try $0.get() })
             .map({ row in
                 return try Column(
