@@ -9,6 +9,7 @@ import Foundation
 
 let reservedKeywords: Set<String> = [
     "public",
+    "operator",
 ]
 
 public func normalizedForReservedKeywords(_ name: String) -> String {
