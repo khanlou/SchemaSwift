@@ -1,8 +1,10 @@
 import ArgumentParser
 import SchemaSwiftLibrary
 import Foundation
+import AsyncAlgorithms
 
-struct SchemaSwift: ParsableCommand {
+@main
+struct SchemaSwift: AsyncParsableCommand {
     static var configuration = CommandConfiguration(
         abstract: "A utility for generating Swift row structs from a Postgres schema.",
         version: "1.0.0",
@@ -11,7 +13,7 @@ struct SchemaSwift: ParsableCommand {
     )
 }
 
-struct Generate: ParsableCommand {
+struct Generate: AsyncParsableCommand {
     @Option(help: "The full url for the Postgres server, with username, password, database name, and port.")
     var url: String
 
@@ -41,14 +43,17 @@ struct Generate: ParsableCommand {
     )
     var override: [String] = []
 
-    func run() throws {
-
+    func run() async throws {
         let overrides = Overrides(overrides: override)
         let database = try Database(url: url)
 
-        let enums = try database.fetchEnumTypes(schema: schema)
+        let enums = try await database.fetchEnumTypes(schema: schema)
 
-        let tables = try database.fetchTableNames(schema: schema).map({ try database.fetchTableDefinition(tableName: $0) })
+        let tables = try await database.fetchTableNames(schema: schema)
+            .async
+            .map({
+                try await database.fetchTableDefinition(tableName: $0)
+            })
 
         var header = """
         /**
@@ -96,7 +101,7 @@ struct Generate: ParsableCommand {
             """
         }
 
-        for table in tables {
+        for try await table in tables {
             body += """
             struct \(Inflections.upperCamelCase(Inflections.singularize(table.name))): Codable\(protocols.isEmpty ? "" : ", \(protocols)") {
                 static let tableName = "\(table.name)"
@@ -158,7 +163,7 @@ struct Generate: ParsableCommand {
         } else {
             print(completeString)
         }
+
+        try await database.shutdown()
     }
 }
-
-SchemaSwift.main()

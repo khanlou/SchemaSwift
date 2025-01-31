@@ -1,25 +1,28 @@
-// swift-tools-version:5.3
+// swift-tools-version:5.10
 
 import PackageDescription
 
 let package = Package(
     name: "SchemaSwift",
+    platforms: [.macOS(.v13)],
     products: [
         .executable(name: "SchemaSwift", targets: ["SchemaSwift"]),
         .library(name: "SchemaSwiftLibrary", targets: ["SchemaSwiftLibrary"]),
     ],
     dependencies: [
-        .package(name: "swift-argument-parser", url: "https://github.com/apple/swift-argument-parser", from: "0.3.0"),
-        .package(url: "https://github.com/codewinsdotcom/PostgresClientKit", from: "1.4.3"),
+        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
+        .package(url: "https://github.com/vapor/postgres-kit.git", from: "2.12.0"),
+        .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
     ],
     targets: [
         .target(
             name: "SchemaSwiftLibrary",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                .product(name: "PostgresClientKit", package: "PostgresClientKit"),
+                .product(name: "PostgresKit", package: "postgres-kit"),
+                .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
             ]),
-        .target(
+        .executableTarget(
             name: "SchemaSwift",
             dependencies: ["SchemaSwiftLibrary"]),
         .testTarget(
