@@ -30,5 +30,8 @@ A list of comma separated protocols to apply to each record struct. Codable conf
 ### swift-namespace
 An empty enum that acts as a namespace that all types will go inside. If not specified, types will not be placed inside an enum.
 
+### trim-trailing-whitespace
+Remove trailing spaces and tabs from each generated output line. In JSON configuration files, use `trimTrailingWhitespace`.
+
 ### override
 Overrides for the generated types. Must be in the format `table.column=Type`. May include multiple overrides.

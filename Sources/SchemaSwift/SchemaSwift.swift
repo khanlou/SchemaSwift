@@ -43,9 +43,15 @@ struct Generate: AsyncParsableCommand {
     )
     var override: [String] = []
 
+    @Flag(
+        help: "Remove trailing spaces and tabs from each generated output line."
+    )
+    var trimTrailingWhitespace = false
+
     func run() async throws {
         let overrides = Overrides(overrides: override)
         let database = try Database(url: url)
+        let shouldTrimTrailingWhitespace = trimTrailingWhitespace || configuration?.trimTrailingWhitespace == true
 
         let enums = try await database.fetchEnumTypes(schema: schema)
 
@@ -155,7 +161,12 @@ struct Generate: AsyncParsableCommand {
             footer += "}"
         }
 
-        let completeString = header + body + footer
+        var completeString = header + body + footer
+        if shouldTrimTrailingWhitespace {
+            completeString = completeString.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
+                .map({ $0.trimmingCharacters(in: .whitespaces) })
+                .joined(separator: "\n")
+        }
 
         if let outputPath = output {
             let url = URL(fileURLWithPath: outputPath)
