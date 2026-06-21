@@ -12,6 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
+        .package(url: "https://github.com/vapor/async-kit.git", from: "1.20.0"),
         .package(url: "https://github.com/vapor/postgres-kit.git", from: "2.12.0"),
         .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
     ],
@@ -25,7 +26,10 @@ let package = Package(
             ]),
         .executableTarget(
             name: "SchemaSwift",
-            dependencies: ["SchemaSwiftLibrary"]),
+            dependencies: [
+                "SchemaSwiftLibrary",
+                .product(name: "AsyncKit", package: "async-kit"),
+            ]),
         .plugin(
             name: "SchemaSwiftPlugin",
             capability: .command(
