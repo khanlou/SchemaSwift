@@ -14,29 +14,36 @@ struct SchemaSwift: AsyncParsableCommand {
 }
 
 struct Generate: AsyncParsableCommand {
-    @Option(help: "The full url for the Postgres server, with username, password, database name, and port.")
-    var url: String
+    @Option(
+        help: "The full url for the Postgres server, with username, password, database name, and port. Can also be provided in .schemaswift.json."
+    )
+    var url: String?
+
+    @Option(
+        help: "The path to a JSON configuration file. Defaults to .schemaswift.json in the current directory when that file exists."
+    )
+    var config: String?
 
     @Option(
         name: [.customShort("o"), .long],
-        help: "The location of the file containing the output. Will output to stdout if a file is not specified."
+        help: "The location of the file containing the output. Required in JSON configuration files. Will output to stdout for command-line only usage if a file is not specified."
     )
     var output: String?
 
     @Option(
         help: "The schema in the database to generate models for. Will default to \"public\" if not specified."
     )
-    var schema: String = "public"
+    var schema: String?
 
     @Option(
         help: "A list of comma separated protocols to apply to each record struct. Codable conformance is always included. Will default to adding \"Equatable, Hashable\" if not specified."
     )
-    var protocols: String = "Equatable, Hashable"
+    var protocols: String?
 
     @Option(
         help: "An empty enum that acts as a namespace that all types will go inside."
     )
-    var swiftNamespace: String = ""
+    var swiftNamespace: String?
 
     @Option(
         help: "Overrides for the generated types. Must be in the format `table.column=Type`. May include multiple overrides."
@@ -49,7 +56,15 @@ struct Generate: AsyncParsableCommand {
     var trimTrailingWhitespace = false
 
     func run() async throws {
-        let overrides = Overrides(overrides: override)
+        let configFile = try loadConfiguration()
+        let configuration = configFile.configuration
+        let fileEnvironment = try loadEnvironmentFile(configuration: configuration, configDirectory: configFile.directory)
+        let url = try resolvedURL(configuration: configuration, fileEnvironment: fileEnvironment)
+        let schema = schema ?? configuration?.schema ?? "public"
+        let protocols = protocols.map(SchemaSwiftConfiguration.protocols) ?? configuration?.protocols ?? ["Equatable", "Hashable"]
+        let swiftNamespace = swiftNamespace ?? configuration?.swiftNamespace ?? ""
+        let output = resolvedOutput(configuration: configuration, configDirectory: configFile.directory)
+        let overrides = Overrides(overrides: (configuration?.overrides ?? []) + override)
         let database = try Database(url: url)
         let shouldTrimTrailingWhitespace = trimTrailingWhitespace || configuration?.trimTrailingWhitespace == true
 
@@ -109,7 +124,7 @@ struct Generate: AsyncParsableCommand {
 
         for try await table in tables {
             body += """
-            struct \(Inflections.upperCamelCase(Inflections.singularize(table.name))): Codable\(protocols.isEmpty ? "" : ", \(protocols)") {
+            struct \(Inflections.upperCamelCase(Inflections.singularize(table.name))): Codable\(protocols.isEmpty ? "" : ", \(protocols.joined(separator: ", "))") {
                 static let tableName = "\(table.name)"
 
 
@@ -168,13 +183,97 @@ struct Generate: AsyncParsableCommand {
                 .joined(separator: "\n")
         }
 
-        if let outputPath = output {
-            let url = URL(fileURLWithPath: outputPath)
-            try completeString.write(to: url, atomically: true, encoding: .utf8)
+        if let outputURL = output {
+            try completeString.write(to: outputURL, atomically: true, encoding: .utf8)
         } else {
             print(completeString)
         }
 
         try await database.shutdown()
+    }
+
+    private func loadConfiguration() throws -> (configuration: SchemaSwiftConfiguration?, directory: URL?) {
+        let currentDirectory = URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        let configURL: URL
+        let isExplicitConfig: Bool
+
+        if let config {
+            configURL = Self.fileURL(forPath: config, relativeTo: currentDirectory)
+            isExplicitConfig = true
+        } else {
+            configURL = currentDirectory.appendingPathComponent(".schemaswift.json")
+            isExplicitConfig = false
+        }
+
+        guard FileManager.default.fileExists(atPath: configURL.path) else {
+            if isExplicitConfig {
+                throw ValidationError("No configuration file exists at \(configURL.path).")
+            }
+
+            return (nil, nil)
+        }
+
+        let data = try Data(contentsOf: configURL)
+        let configuration = try JSONDecoder().decode(SchemaSwiftConfiguration.self, from: data)
+        return (configuration, configURL.deletingLastPathComponent())
+    }
+
+    private func loadEnvironmentFile(configuration: SchemaSwiftConfiguration?, configDirectory: URL?) throws -> [String: String] {
+        guard let envFile = configuration?.envFile else {
+            return [:]
+        }
+
+        let envFileURL = Self.fileURL(
+            forPath: envFile,
+            relativeTo: configDirectory ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        )
+
+        guard FileManager.default.fileExists(atPath: envFileURL.path) else {
+            return [:]
+        }
+
+        let contents = try String(contentsOf: envFileURL, encoding: .utf8)
+        return EnvironmentFile.parse(contents)
+    }
+
+    private func resolvedURL(configuration: SchemaSwiftConfiguration?, fileEnvironment: [String: String]) throws -> String {
+        let environment = fileEnvironment.merging(ProcessInfo.processInfo.environment) { _, processValue in processValue }
+
+        if let url = url ?? configuration?.url {
+            do {
+                return try EnvironmentExpansion.expand(url, environment: environment)
+            } catch let error as EnvironmentExpansionError {
+                throw ValidationError(error.description)
+            }
+        }
+
+        if let variableName = configuration?.urlEnvironmentVariable {
+            if let url = environment[variableName], !url.isEmpty {
+                return url
+            }
+
+            throw ValidationError("Environment variable '\(variableName)' is not set. Provide it in the environment or in \(configuration?.envFile ?? ".env.local").")
+        }
+
+        throw ValidationError("Missing required option '--url'. Provide it on the command line, as 'url', or as 'urlEnvironmentVariable' in .schemaswift.json.")
+    }
+
+    private func resolvedOutput(configuration: SchemaSwiftConfiguration?, configDirectory: URL?) -> URL? {
+        guard let output = output ?? configuration?.output else {
+            return nil
+        }
+
+        return Self.fileURL(
+            forPath: output,
+            relativeTo: configDirectory ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath, isDirectory: true)
+        )
+    }
+
+    private static func fileURL(forPath path: String, relativeTo baseURL: URL) -> URL {
+        if path.hasPrefix("/") {
+            return URL(fileURLWithPath: path)
+        }
+
+        return baseURL.appendingPathComponent(path).standardizedFileURL
     }
 }

@@ -8,6 +8,7 @@ let package = Package(
     products: [
         .executable(name: "SchemaSwift", targets: ["SchemaSwift"]),
         .library(name: "SchemaSwiftLibrary", targets: ["SchemaSwiftLibrary"]),
+        .plugin(name: "SchemaSwiftPlugin", targets: ["SchemaSwiftPlugin"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.0"),
@@ -25,6 +26,22 @@ let package = Package(
         .executableTarget(
             name: "SchemaSwift",
             dependencies: ["SchemaSwiftLibrary"]),
+        .plugin(
+            name: "SchemaSwiftPlugin",
+            capability: .command(
+                intent: .custom(
+                    verb: "schemaswift",
+                    description: "Generate Swift row structs from a Postgres schema."
+                ),
+                permissions: [
+                    .writeToPackageDirectory(reason: "Writes generated Swift output configured by SchemaSwift."),
+                    .allowNetworkConnections(
+                        scope: .all(ports: [5432]),
+                        reason: "Connects to Postgres to read schema metadata."
+                    ),
+                ]
+            ),
+            dependencies: ["SchemaSwift"]),
         .testTarget(
             name: "SchemaSwiftTests",
             dependencies: ["SchemaSwiftLibrary"]),
