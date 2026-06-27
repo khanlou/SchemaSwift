@@ -178,8 +178,10 @@ struct Generate: AsyncParsableCommand {
 
         var completeString = header + body + footer
         if shouldTrimTrailingWhitespace {
-            completeString = completeString.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
-                .map({ $0.trimmingCharacters(in: .whitespaces) })
+            completeString = completeString
+                .split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
+                .map({ $0.reversed().drop(while: \.isWhitespace).reversed() })
+                .map({ String($0) })
                 .joined(separator: "\n")
         }
 
